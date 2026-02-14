@@ -2,10 +2,10 @@ import { Activity, CalendarRange, Users, Bell, Moon, SunMedium, Search, Calendar
 import { useState, useMemo, useRef, useEffect } from 'react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
-import { useTheme } from '../hooks/useTheme';
-import { useLanguage } from '../hooks/useLanguage';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 import { events, societies, members } from '../data/mockData';
+import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 const Dashboard = () => {
   const { isDark, toggleTheme } = useTheme();

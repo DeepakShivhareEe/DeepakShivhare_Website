@@ -1,3 +1,5 @@
 import { useLanguageContext } from '../context/LanguageContext';
 
-export const useLanguage = useLanguageContext;
+export function useLanguage() {
+  return useLanguageContext();
+}
