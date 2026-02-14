@@ -1,13 +1,69 @@
-import { Activity, CalendarRange, Users, Bell, Moon, SunMedium } from 'lucide-react';
+import { Activity, CalendarRange, Users, Bell, Moon, SunMedium, Search, CalendarDays, Building2, User } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
+import { events, societies, members } from '../data/mockData';
 
 const Dashboard = () => {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Filter data based on search query
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return { events: [], societies: [], members: [] };
+
+    const query = searchQuery.toLowerCase();
+    
+    const filteredEvents = events.filter(event =>
+      event.title.toLowerCase().includes(query) ||
+      event.society.toLowerCase().includes(query) ||
+      event.location.toLowerCase().includes(query)
+    );
+
+    const filteredSocieties = societies.filter(society =>
+      society.name.toLowerCase().includes(query) ||
+      society.category.toLowerCase().includes(query) ||
+      society.description.toLowerCase().includes(query)
+    );
+
+    const filteredMembers = members.filter(member =>
+      member.name.toLowerCase().includes(query) ||
+      member.role.toLowerCase().includes(query) ||
+      member.society.toLowerCase().includes(query)
+    );
+
+    return {
+      events: filteredEvents,
+      societies: filteredSocieties,
+      members: filteredMembers,
+    };
+  }, [searchQuery]);
+
+  const totalResults = searchResults.events.length + searchResults.societies.length + searchResults.members.length;
+
+  // Close results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowResults(value.trim().length > 0);
+  };
 
   return (
     <div className="space-y-6">
@@ -55,6 +111,154 @@ const Dashboard = () => {
             </button>
           </div>
         </GlassCard>
+      </div>
+
+      {/* Search Bar */}
+      <div ref={searchRef} className="relative">
+        <GlassCard className="relative">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Search className="h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onFocus={() => searchQuery && setShowResults(true)}
+              placeholder="Search events, societies, members..."
+              className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-50 dark:placeholder:text-slate-500"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setShowResults(false);
+                }}
+                className="text-xs text-slate-400 hover:text-neonCyan transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </GlassCard>
+
+        {/* Search Results Dropdown */}
+        {showResults && searchQuery && (
+          <GlassCard className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto">
+            <div className="px-4 py-3">
+              {totalResults === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-slate-400">No results found for "{searchQuery}"</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Events Results */}
+                  {searchResults.events.length > 0 && (
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-neonCyan" />
+                        <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          Events ({searchResults.events.length})
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.events.map((event) => (
+                          <button
+                            key={event.id}
+                            type="button"
+                            onClick={() => {
+                              console.log('Navigate to event:', event.title);
+                              setShowResults(false);
+                            }}
+                            className="w-full rounded-xl px-3 py-2 text-left transition-all hover:bg-slate-900/50 hover:ring-1 hover:ring-neonCyan/30"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-slate-100">{event.title}</p>
+                                <p className="text-xs text-slate-400">{event.society} · {event.location}</p>
+                              </div>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                event.status === 'Live' ? 'bg-neonCyan/20 text-neonCyan' :
+                                event.status === 'Waitlist' ? 'bg-rose-500/20 text-rose-400' :
+                                'bg-slate-700/50 text-slate-300'
+                              }`}>
+                                {event.status}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Societies Results */}
+                  {searchResults.societies.length > 0 && (
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-neonPurple" />
+                        <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          Societies ({searchResults.societies.length})
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.societies.map((society) => (
+                          <button
+                            key={society.id}
+                            type="button"
+                            onClick={() => {
+                              console.log('Navigate to society:', society.name);
+                              setShowResults(false);
+                            }}
+                            className="w-full rounded-xl px-3 py-2 text-left transition-all hover:bg-slate-900/50 hover:ring-1 hover:ring-neonPurple/30"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-slate-100">{society.name}</p>
+                                <p className="text-xs text-slate-400">{society.category} · {society.members} members</p>
+                              </div>
+                              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: society.accent }} />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Members Results */}
+                  {searchResults.members.length > 0 && (
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4 text-emerald-400" />
+                        <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          Members ({searchResults.members.length})
+                        </h3>
+                      </div>
+                      <div className="space-y-1">
+                        {searchResults.members.map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            onClick={() => {
+                              console.log('Navigate to member:', member.name);
+                              setShowResults(false);
+                            }}
+                            className="w-full rounded-xl px-3 py-2 text-left transition-all hover:bg-slate-900/50 hover:ring-1 hover:ring-emerald-400/30"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-slate-100">{member.name}</p>
+                                <p className="text-xs text-slate-400">{member.role} · {member.society}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -145,7 +349,6 @@ const Dashboard = () => {
                   >
                     {membershipData.map((entry, index) => (
                       <Cell
-                        // eslint-disable-next-line react/no-array-index-key
                         key={`slice-${index}`}
                         fill={entry.color}
                       />

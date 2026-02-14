@@ -1,4 +1,5 @@
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 import GlassCard from './GlassCard';
 
 interface SocietyCardProps {
@@ -8,6 +9,7 @@ interface SocietyCardProps {
   eventsThisMonth: number;
   accent: string;
   description: string;
+  onDelete?: () => void;
 }
 
 const SocietyCard: React.FC<SocietyCardProps> = ({
@@ -17,6 +19,7 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
   eventsThisMonth,
   accent,
   description,
+  onDelete,
 }) => {
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
@@ -46,6 +49,13 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
     // Add navigation or action logic here
   };
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete && confirm(`Are you sure you want to delete "${name}"?`)) {
+      onDelete();
+    }
+  };
+
   const glow = useMotionTemplate`radial-gradient(circle at 50% 0%, rgba(0,245,255,${glowOpacity}), transparent 60%)`;
 
   return (
@@ -63,6 +73,16 @@ const SocietyCard: React.FC<SocietyCardProps> = ({
             className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
           />
           <div className="relative flex flex-col gap-3">
+            {onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="absolute -right-2 -top-2 rounded-xl bg-rose-500/90 p-2 text-slate-100 opacity-0 shadow-lg transition-all hover:bg-rose-600 group-hover:opacity-100"
+                title="Delete society"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
